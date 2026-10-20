@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2e8b64">
+<meta name="description" content="Семейное древо — конструктор: добавляйте родственников, связывайте их отношениями и смотрите интерактивную схему семьи. Данные хранятся только в вашем браузере.">
+<title>Семейное древо — конструктор</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <!-- ==================== ВЕРХНЯЯ ПАНЕЛЬ ==================== -->
+  <header class="topbar">
+    <button class="icon-btn" id="btnSidebar" title="Список родственников" aria-label="Список родственников">&#9776;</button>
+
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="9" cy="9" r="4.2" fill="none" stroke="var(--acc)" stroke-width="2.4"/>
+        <circle cx="23" cy="9" r="4.2" fill="none" stroke="var(--acc)" stroke-width="2.4"/>
+        <circle cx="16" cy="24" r="4.2" fill="none" stroke="var(--acc)" stroke-width="2.4"/>
+        <path d="M9 13.2v3.3a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-3.3M16 19.5v2.3"
+              fill="none" stroke="var(--acc)" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <span>
+        Семейное древо
+        <span class="brand-sub">конструктор родословной</span>
+      </span>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn primary" id="btnAdd">+ <span class="hide-sm">Родственник</span></button>
+      <button class="btn ghost hide-sm" id="btnArrange" title="Расположить карточки автоматически по родственным связям">Упорядочить</button>
+      <button class="btn ghost hide-sm" id="btnCenter" title="Центрировать древо без изменения масштаба">Центрировать</button>
+      <button class="btn ghost hide-sm" id="btnFit">Показать всё</button>
+      <button class="icon-btn" id="btnFitIcon" title="Показать всё древо" aria-label="Показать всё древо">&#9635;</button>
+      <button class="icon-btn" id="btnCenterIcon" title="Центрировать древо" aria-label="Центрировать древо">&#9678;</button>
+      <button class="icon-btn" id="btnCloud" title="Соавторы и синхронизация" aria-label="Соавторы и синхронизация">&#9729;</button>
+      <button class="icon-btn" id="btnTheme" title="Светлая / тёмная тема" aria-label="Переключить тему">&#9789;</button>
+      <button class="icon-btn" id="btnMenu" title="Меню" aria-label="Меню">&#8942;</button>
+    </div>
+  </header>
+
+  <!-- Статус совместной работы (заполняется скриптом) -->
+  <div class="cloudbar" id="cloudBar" hidden></div>
+
+  <!-- Плашка-напоминание о резервной копии (заполняется скриптом) -->
+  <div class="banner" id="banner" hidden></div>
+
+  <!-- ==================== МАКЕТ ==================== -->
+  <div class="layout">
+
+    <!-- Список родственников -->
+    <aside class="sidebar" id="sidebar">
+      <div class="side-search">
+        <input class="field" id="search" type="search" placeholder="Поиск по имени…" autocomplete="off">
+        <button class="icon-btn" id="searchClear" title="Очистить" aria-label="Очистить поиск" hidden>&#215;</button>
+      </div>
+      <div class="side-head">
+        <span id="peopleCount">Родственники</span>
+        <button class="linkbtn" id="btnGenFilter">Поколения</button>
+      </div>
+      <div class="people-list" id="peopleList"></div>
+      <div class="side-empty" id="sideEmpty" hidden>Ничего не найдено</div>
+    </aside>
+    <div class="backdrop-area" id="sideBackdrop" hidden></div>
+
+    <!-- Холст с древом -->
+    <main class="canvas" id="canvas">
+      <div class="world" id="world">
+        <svg id="edges" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="nodes"></div>
+      </div>
+
+      <!-- Пустое состояние -->
+      <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-card">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="18" cy="18" r="8" fill="none" stroke="var(--acc)" stroke-width="4"/>
+            <circle cx="46" cy="18" r="8" fill="none" stroke="var(--acc)" stroke-width="4"/>
+            <circle cx="32" cy="48" r="8" fill="none" stroke="var(--acc)" stroke-width="4"/>
+            <path d="M18 26v7a4 4 0 0 0 4 4h20a4 4 0 0 0 4-4v-7M32 41v-4" fill="none"
+                  stroke="var(--acc)" stroke-width="3.6" stroke-linecap="round"/>
+          </svg>
+          <h2>Здесь появится ваше древо</h2>
+          <p>Начните с себя или с любого родственника, о котором что-то знаете.
+             Необязательно заполнять все поля — данные можно добавлять постепенно.</p>
+          <div class="btn-row" style="justify-content:center">
+            <button class="btn primary" id="emptyAdd">Добавить первого человека</button>
+            <button class="btn" id="emptyDemo">Посмотреть пример</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Зум -->
+      <div class="zoom-fab">
+        <button class="icon-btn" id="zoomIn" title="Приблизить" aria-label="Приблизить">+</button>
+        <button class="icon-btn" id="zoomOut" title="Отдалить" aria-label="Отдалить">&#8722;</button>
+      </div>
+
+      <!-- Панель инструментов конструктора -->
+      <div class="tools" id="tools" role="toolbar" aria-label="Инструменты конструктора">
+        <button class="tool-btn" data-tool="move" title="Двигать карточки и просматривать" aria-label="Перемещение">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-2.4 2.4M12 3l2.4 2.4M12 21l-2.4-2.4M12 21l2.4-2.4M3 12l2.4-2.4M3 12l2.4 2.4M21 12l-2.4-2.4M21 12l-2.4 2.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="select" title="Выделить рамкой" aria-label="Выделение рамкой">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="4 3"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="connect" title="Создать связь: потяните от карточки к карточке" aria-label="Создать связь">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 15l6-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="7" cy="17" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="7" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+        <button class="tool-btn" data-tool="line" title="Нарисовать свободную линию" aria-label="Свободная линия">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19C9 19 15 5 19 5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="5" cy="19" r="2.2" fill="currentColor"/><circle cx="19" cy="5" r="2.2" fill="currentColor"/></svg>
+        </button>
+        <span class="tsep"></span>
+        <button class="tool-btn" id="toolAdd" title="Добавить человека" aria-label="Добавить человека">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tool-btn" id="toolConnect" title="Связать выбранного с другим" aria-label="Связать выбранного">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="tsep"></span>
+        <button class="tool-btn" id="toolUndo" title="Отменить (Ctrl+Z)" aria-label="Отменить">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7h5a5 5 0 0 1 0 10H8M9 7L5 11M9 7l4-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="tool-btn" id="toolRedo" title="Повторить (Ctrl+Y)" aria-label="Повторить">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 7h-5a5 5 0 0 0 0 10h6M15 7l4 4M15 7l-4-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="tool-btn" id="toolArrange" title="Автоматически расположить по родственным связям" aria-label="Автоматически расположить древо">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="8.5" y="13" width="7" height="7" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+        <button class="tool-btn" id="toolCenter" title="Центрировать древо (без изменения масштаба)" aria-label="Центрировать древо">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tool-btn danger" id="toolDelete" title="Удалить выделенное (Delete)" aria-label="Удалить выделенное">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M7 7l1 12h8l1-12M10 11v5M14 11v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="tool-hint" id="toolHint" hidden></div>
+
+      <!-- Панель подробной информации о человеке -->
+      <div id="detailsHost"></div>
+    </main>
+  </div>
+
+  <!-- Динамические области -->
+  <div id="popoverHost"></div>
+  <div id="modalHost"></div>
+  <div class="toasts" id="toasts"></div>
+  <div id="welcomeHost"></div>
+
+  <input type="file" id="importFile" accept=".json,application/json" hidden>
+
+  <script src="./cloud-config.js" defer></script>
+  <script src="./vendor/supabase.js" defer></script>
+  <script src="./cloud.js" defer></script>
+  <script src="./tree.js" defer></script>
+  <script src="./app.js" defer></script>
+</body>
+</html>
