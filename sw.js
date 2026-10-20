@@ -1,7 +1,7 @@
 /* Семейное древо — service worker: кэш-сначала, работа офлайн. */
 'use strict';
 
-const CACHE = 'family-tree-v12';
+const CACHE = 'family-tree-v13';
 const ASSETS = [
   './',
   './index.html',
@@ -10,7 +10,7 @@ const ASSETS = [
   './app.js',
   './cloud.js',
   './cloud-config.js',
-  './vendor/supabase.js',
+  './supabase-boot.js',
   './supabase/schema.sql',
   './manifest.json',
   './icon-192.png',

@@ -41,6 +41,15 @@
   function libReady() {
     return !!(root && root.supabase && root.supabase.createClient);
   }
+  async function waitForLibrary(timeoutMs) {
+    var started = Date.now();
+    while (!libReady()) {
+      if (root.__supabaseLoadError) return false;
+      if (Date.now() - started >= (timeoutMs || 15000)) return false;
+      await new Promise(function (r) { setTimeout(r, 100); });
+    }
+    return true;
+  }
 
   var profile = readJSON(PROFILE_KEY) || {};
   function profileName() {
@@ -430,10 +439,19 @@
       emitStatus('off', 'Облако не подключено');
       return false;
     }
-    if (!libReady()) {
-      emitStatus('error', 'Не загрузилась библиотека Supabase');
+    if (client) return true;
+
+    emitStatus('connecting', 'Загрузка библиотеки Supabase…');
+    var loaded = await waitForLibrary(15000);
+    if (!loaded) {
+      var reason = root.__supabaseLoadError
+        ? errText(root.__supabaseLoadError)
+        : 'библиотека не загрузилась за 15 секунд';
+      console.error('[Supabase] Библиотека недоступна:', reason);
+      emitStatus('error', 'Не удалось загрузить Supabase JS: ' + reason);
       return false;
     }
+
     emitStatus('connecting', 'Подключение…');
     try {
       var cfg = config();
@@ -445,7 +463,11 @@
       if (!session) {
         var ares = await client.auth.signInAnonymously();
         if (ares.error) {
-          throw new Error(ares.error.message + '. Включите Anonymous sign-ins в Supabase → Authentication → Sign In / Providers.');
+          var amsg = ares.error.message || 'Не удалось выполнить анонимный вход';
+          if (/anonymous/i.test(amsg)) {
+            amsg += '. Включите Anonymous sign-ins в Supabase → Authentication → Sign In / Providers.';
+          }
+          throw new Error(amsg);
         }
         user = ares.data.user;
       } else {
